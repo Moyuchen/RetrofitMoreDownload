@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.retrofitmoredownload.MainActivity">
+
+    <cn.jzvd.JZVideoPlayerStandard
+        android:id="@+id/JPS"
+        android:layout_width="match_parent"
+        android:layout_height="200sp"
+        />
+<ProgressBar
+    android:id="@+id/pb"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
+    android:background="@color/colorPrimaryDark"
+    android:max="100">
+
+</ProgressBar>
+    <TextView
+        android:id="@+id/tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0%"
+        />
+<Button
+    android:id="@+id/start"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:onClick="Click"
+    android:text="开始"/>
+    <Button
+        android:id="@+id/pause"
+        android:layout_width="wrap_content"
+        android:onClick="Click"
+        android:layout_height="wrap_content"
+        android:text="暂停"/>
+</LinearLayout>
