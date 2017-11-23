@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements DownloadThread.Re
         switch (id) {
             case R.id.start:
                 Log.i(TAG, "Click: "+"kaishi");
-                downloadThread = new DownloadThread("/pub/TED-talks/911Mothers_2010W-480p.mp4", getCacheDir() + "/c.mp4",this);
+                downloadThread = new DownloadThread("2449_bfbbfa3cea8f11e5aac3db03cda99974.f20.mp4", getCacheDir() + "/c.mp4",this);
                 downloadThread.setThreadNum(3);
                 downloadThread.setrP(this);
 

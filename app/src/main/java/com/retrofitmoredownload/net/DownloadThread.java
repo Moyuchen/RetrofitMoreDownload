@@ -2,12 +2,17 @@ package com.retrofitmoredownload.net;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
+
+import com.retrofitmoredownload.bean.DaoBean.FileBean;
+import com.retrofitmoredownload.utils.DaoUtils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -31,7 +36,9 @@ public class DownloadThread extends Thread{
     String range=null;
 
     private int[] LENG={0};
+    private String contentLength;
 
+private  boolean isFirst=true;
 
     public void setDown(boolean down) {
         isDown = down;
@@ -78,7 +85,7 @@ public class DownloadThread extends Thread{
 
         //计算出下载块以后   创建线程执行下载操作
         for (int i = 0; i < threadNum; i++) {
-
+            final long startPos;
             //计算开始位置
             final long[] startPosition = {blockSize * i};
             //让最后一个线程下载的大小是正好的，  总长度 - 除了最后一个块的大小和
@@ -86,28 +93,31 @@ public class DownloadThread extends Thread{
                 blockSize = length - blockSize * (threadNum - 1);
             }
 
-//            //获取到保存数据库中的下载长度
-//            List<FileBean> query = DaoUtils.getInstance(context).Query(downloadUrl,String.valueOf(i));
+            //获取到保存数据库中的下载长度
+            List<FileBean> query = DaoUtils.getInstance(context).Query(downloadUrl,String.valueOf(i));
 
-//            if (query!=null&query.size()>0) {
-//                FileBean fileBean = query.get(0);
-//                String contentLength = fileBean.getContentLength();
-//              //下载头
-//                startPos = startPosition[0] + Integer.parseInt(contentLength);
-//                range = "bytes=" + (startPosition[0]+Integer.parseInt(contentLength)) + "-" + (startPosition[0] + blockSize - 1);
-//
-//            }
-//            else {
-//                DaoUtils.getInstance(context).Insert(downloadUrl,String.valueOf(i),String.valueOf(0));
+            if (query!=null&&query.size()>0) {
+                //获取已下载的长度
+                contentLength = query.get(0).getContentLength();
+
+                long lon = startPosition[0] + Long.parseLong(contentLength);
+                Log.i(TAG, "downloadTask: 继续下载的开始位置:"+lon);
+                startPos=lon;
+                range = "bytes=" + (startPosition[0]+Integer.parseInt(contentLength)) + "-" + (startPosition[0] + blockSize - 1);
+                Log.i("=======SQL=======", "downloadTask: " + range);
+            } else {
+
+                DaoUtils.getInstance(context).Insert(downloadUrl,String.valueOf(i),String.valueOf(0));
+                startPos=startPosition[0];
                 range = "bytes=" +startPosition[0] + "-" +(startPosition[0] + blockSize - 1);
 
+                Log.i("=======first=======", "downloadTask: " + range);
+            }
 
-//            }
 
 
-
-//            final int finalI = i;
-//            final int finalI1 = i;
+            final int finalI = i;
+            final int[] num = {0};
             RetrofitUtils.download(RequestApi.BASE_URL2).downloadFile(range).
                     subscribeOn(Schedulers.io()).observeOn(Schedulers.io()).subscribe(new Observer<ResponseBody>() {
 
@@ -115,6 +125,7 @@ public class DownloadThread extends Thread{
                 @Override
                 public void onCompleted() {
                     Log.i(TAG, "onCompleted: ");
+
                 }
 
                 @Override
@@ -131,21 +142,34 @@ public class DownloadThread extends Thread{
                             bis = new BufferedInputStream(responseBody.byteStream());
                             raf = new RandomAccessFile(file, "rwd");
 
-                            raf.seek(startPosition[0]);
+                            raf.seek(startPos);
                             byte[] buff = new byte[1024 * 8];
                             int len = 0;
                             while ((len = bis.read(buff)) != -1) {
 
                                 if (isDown) {
+
                                     raf.write(buff, 0, len);
-//                                    LENG[0] +=len;
+
+                                    if (!TextUtils.isEmpty(contentLength)) {
+                                        if (isFirst) {
+                                            num[0] = Integer.parseInt(contentLength)+len;
+                                            isFirst=false;
+                                        }else {
+                                            num[0] = num[0] + len;
+                                        }
+
+                                        Log.i(TAG, "onNext: num[0]:"+num[0]);
+                                    }else {
+                                        num[0] = num[0] + len;
+                                    }
 
                                     rP.retrunProgre(len,length);
-
                                     //更新数据库中的数据
-//                                    DaoUtils.getInstance(context).Update(String.valueOf(finalI),String.valueOf(LENG[0]),downloadUrl);
-                                }else {
-                                        break;
+                                    DaoUtils.getInstance(context).Update(String.valueOf(finalI),String.valueOf(num[0]),downloadUrl);
+                                   }else {
+
+                                    break;
                                 }
                             }
 
